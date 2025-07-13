@@ -1,7 +1,7 @@
 """Function profiler."""
 
 import timeit
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import numpy as np
@@ -178,3 +178,53 @@ class FunctionProfiler:
         if show:
             plt.show()
         return fig, ax
+
+
+def create(
+    function: Callable | Sequence[Callable],
+    input_gen: ArgGen | Sequence[ArgGen],
+    function_name: Sequence[str] | None = None,
+    output_evaluator: Callable[[InputSize, Sequence[InputArgs], Sequence[InputKwargs], Sequence[Output]], None] | None = None,
+) -> FunctionProfiler:
+    """Profile (and compare) one or several functions.
+
+    Parameters
+    ----------
+    function
+        Function(s) to be profiled.
+    input_gen
+        Input argument generator for each function in `function`.
+        Each generator must accept an integer as input,
+        indicating the size of the input(s) to generate.
+        The generator should return a tuple of two elements:
+        - A sequence of positional arguments for the function.
+        - A dictionary of keyword arguments for the function.
+
+        Therefore, each function `f` in `function` should be callable
+        with the corresponding generator `g` in `input_gen` as follows:
+        ```python
+        args, kwargs = g(input_size)
+        f(*args, **kwargs)
+        ```
+    function_name
+        Name(s) of the function(s) to be profiled.
+        If not provided, the function's module and qualified name will be used.
+        If the same function is provided multiple times,
+        the name will be suffixed with an index to ensure uniqueness.
+    output_evaluator
+        Optional callable that evaluates the outputs of the functions.
+        This can be used to validate or process the outputs in parallel to profiling.
+        If not provided, no output evaluation will be performed.
+        The evaluator function should accept
+        the following parameters (passed as positional arguments in this order):
+        - `input_size`: The input size that was used.
+        - `input_args`: A sequence of positional arguments used for each function.
+        - `input_kwargs`: A sequence of keyword arguments used for each function.
+        - `outputs`: A sequence of outputs returned by each function.
+    """
+    return FunctionProfiler(
+        function=function,
+        input_gen=input_gen,
+        function_name=function_name,
+        output_evaluator=output_evaluator,
+    )
